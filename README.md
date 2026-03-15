@@ -9,7 +9,7 @@
 # Script pour programmer la FPGA
 
 ```bash
-python3 pgm_fpga.py -s=/media/sf_vmShare/scf_labs/labo1/hps_gpio/hard/eda/output_files/Lab01.sof
+python3 pgm_fpga.py -s=/media/sf_vmShare/scf_labs/labo1/hps_gpio/hard/eda/output_files/Lab02.sof
 ```
 
 Changer le chemin vers le fichier .sof selon votre configuration
