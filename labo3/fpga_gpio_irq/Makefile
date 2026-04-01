@@ -4,4 +4,4 @@ EXCLUDE_DIR={./doc,./publi,./hard/script,./hard/sim,./hard/tb,./hard/eda/db,./ha
 EXCLUDE_FILES={./hard/eda/*.tcl~,./hard/eda/*.txt,./hard/eda/*.csv,./hard/eda/*.qws,./hard/eda/*.sopcinfo,./soft/proj/*.axf,./soft/proj/*.objdump,./soft/proj/*.srec}
 
 zip:
-	tar --exclude=$(EXCLUDE_DIR) --exclude=$(EXCLUDE_FILES) -zcf ../fpga_gpio.tar.gz .
+	tar --exclude=$(EXCLUDE_DIR) --exclude=$(EXCLUDE_FILES) -zcf ../hps_gpio.tar.gz .
