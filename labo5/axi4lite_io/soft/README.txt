@@ -5,3 +5,5 @@ folder structure:
     - proj: Altera Monitor Program project and generated files (didn't find a way to generate files into build folder)
     - src: source files
     - test: test files
+
+ARM DS: add both src/axi4lite_io.c and src/io_functions.c to the project (plus headers on the include path for src/).

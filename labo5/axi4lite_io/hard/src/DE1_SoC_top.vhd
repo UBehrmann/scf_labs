@@ -202,34 +202,47 @@ architecture top of DE1_SoC_top is
 
     component qsys_system is
         port (
-            ------------------------------------
-            -- FPGA Side
-            ------------------------------------
+            clk_clk                          : in    std_logic                     := 'X';             -- clk
 
-            -- Global signals
-
-            ------------------------------------
-            -- HPS Side
-            ------------------------------------
             -- DDR3 SDRAM
-            memory_mem_a                    : out   std_logic_vector(14 downto 0);                    -- mem_a
-            memory_mem_ba                   : out   std_logic_vector(2 downto 0);                     -- mem_ba
-            memory_mem_ck                   : out   std_logic;                                        -- mem_ck
-            memory_mem_ck_n                 : out   std_logic;                                        -- mem_ck_n
-            memory_mem_cke                  : out   std_logic;                                        -- mem_cke
-            memory_mem_cs_n                 : out   std_logic;                                        -- mem_cs_n
-            memory_mem_ras_n                : out   std_logic;                                        -- mem_ras_n
-            memory_mem_cas_n                : out   std_logic;                                        -- mem_cas_n
-            memory_mem_we_n                 : out   std_logic;                                        -- mem_we_n
-            memory_mem_reset_n              : out   std_logic;                                        -- mem_reset_n
-            memory_mem_dq                   : inout std_logic_vector(31 downto 0) := (others => 'X'); -- mem_dq
-            memory_mem_dqs                  : inout std_logic_vector(3 downto 0)  := (others => 'X'); -- mem_dqs
-            memory_mem_dqs_n                : inout std_logic_vector(3 downto 0)  := (others => 'X'); -- mem_dqs_n
-            memory_mem_odt                  : out   std_logic;                                        -- mem_odt
-            memory_mem_dm                   : out   std_logic_vector(3 downto 0);                     -- mem_dm
-            memory_oct_rzqin                : in    std_logic                     := 'X';             -- oct_rzqin
+            memory_mem_a                     : out   std_logic_vector(14 downto 0);                    -- mem_a
+            memory_mem_ba                    : out   std_logic_vector(2 downto 0);                     -- mem_ba
+            memory_mem_ck                    : out   std_logic;                                        -- mem_ck
+            memory_mem_ck_n                  : out   std_logic;                                        -- mem_ck_n
+            memory_mem_cke                   : out   std_logic;                                        -- mem_cke
+            memory_mem_cs_n                  : out   std_logic;                                        -- mem_cs_n
+            memory_mem_ras_n                 : out   std_logic;                                        -- mem_ras_n
+            memory_mem_cas_n                 : out   std_logic;                                        -- mem_cas_n
+            memory_mem_we_n                  : out   std_logic;                                        -- mem_we_n
+            memory_mem_reset_n               : out   std_logic;                                        -- mem_reset_n
+            memory_mem_dq                    : inout std_logic_vector(31 downto 0) := (others => 'X'); -- mem_dq
+            memory_mem_dqs                   : inout std_logic_vector(3 downto 0)  := (others => 'X'); -- mem_dqs
+            memory_mem_dqs_n                 : inout std_logic_vector(3 downto 0)  := (others => 'X'); -- mem_dqs_n
+            memory_mem_odt                   : out   std_logic;                                        -- mem_odt
+            memory_mem_dm                    : out   std_logic_vector(3 downto 0);                     -- mem_dm
+            memory_oct_rzqin                 : in    std_logic                     := 'X';             -- oct_rzqin
+
+            -- Pushbutton
+            hps_io_0_hps_io_gpio_inst_GPIO54 : inout std_logic                     := 'X';             -- hps_io_gpio_inst_GPIO54
+
+            -- LED
+            hps_io_0_hps_io_gpio_inst_GPIO53 : inout std_logic                     := 'X';             -- hps_io_gpio_inst_GPIO53
+
+            -- AXI4Lite
+            axi4lite_0_input_reg_a_i         : in    std_logic_vector(31 downto 0) := (others => 'X'); -- input_reg_a_i
+            axi4lite_0_input_reg_b_i         : in    std_logic_vector(31 downto 0) := (others => 'X'); -- input_reg_b_i
+            axi4lite_0_output_reg_a_o        : out   std_logic_vector(31 downto 0);                    -- output_reg_a_o
+            axi4lite_0_output_reg_b_o        : out   std_logic_vector(31 downto 0);                    -- output_reg_b_o
+            axi4lite_0_output_reg_c_o        : out   std_logic_vector(31 downto 0)                     -- output_reg_c_o
         );
     end component qsys_system;
+
+    -- IOs declarations
+    signal keys_s    : std_logic_vector(31 downto 0);
+    signal switchs_s : std_logic_vector(31 downto 0);
+    signal leds_s    : std_logic_vector(31 downto 0);
+    signal hex3_0_s  : std_logic_vector(31 downto 0);
+    signal hex5_4_s  : std_logic_vector(31 downto 0);
 
 begin
 
@@ -238,33 +251,55 @@ begin
 ---------------------------------------------------------
 
     System : component qsys_system
-    port map (
-        ------------------------------------
-        -- FPGA Side
-        ------------------------------------
+        port map (
 
-        -- Global signals
+            clk_clk                          => CLOCK_50_i,
 
-        ------------------------------------
-        -- HPS Side
-        ------------------------------------
-        -- DDR3 SDRAM
-        memory_mem_a        => HPS_DDR3_ADDR_o,
-        memory_mem_ba       => HPS_DDR3_BA_o,
-        memory_mem_ck       => HPS_DDR3_CK_P_o,
-        memory_mem_ck_n     => HPS_DDR3_CK_N_o,
-        memory_mem_cke      => HPS_DDR3_CKE_o,
-        memory_mem_cs_n     => HPS_DDR3_CS_N_o,
-        memory_mem_ras_n    => HPS_DDR3_RAS_N_o,
-        memory_mem_cas_n    => HPS_DDR3_CAS_N_o,
-        memory_mem_we_n     => HPS_DDR3_WE_N_o,
-        memory_mem_reset_n  => HPS_DDR3_RESET_N_o,
-        memory_mem_dq       => HPS_DDR3_DQ_io,
-        memory_mem_dqs      => HPS_DDR3_DQS_P_io,
-        memory_mem_dqs_n    => HPS_DDR3_DQS_N_io,
-        memory_mem_odt      => HPS_DDR3_ODT_o,
-        memory_mem_dm       => HPS_DDR3_DM_o,
-        memory_oct_rzqin    => HPS_DDR3_RZQ_i
-    );
+            -- DDR3 SDRAM
+            memory_mem_a                     => HPS_DDR3_ADDR_o,
+            memory_mem_ba                    => HPS_DDR3_BA_o,
+            memory_mem_ck                    => HPS_DDR3_CK_P_o,
+            memory_mem_ck_n                  => HPS_DDR3_CK_N_o,
+            memory_mem_cke                   => HPS_DDR3_CKE_o,
+            memory_mem_cs_n                  => HPS_DDR3_CS_N_o,
+            memory_mem_ras_n                 => HPS_DDR3_RAS_N_o,
+            memory_mem_cas_n                 => HPS_DDR3_CAS_N_o,
+            memory_mem_we_n                  => HPS_DDR3_WE_N_o,
+            memory_mem_reset_n               => HPS_DDR3_RESET_N_o,
+            memory_mem_dq                    => HPS_DDR3_DQ_io,
+            memory_mem_dqs                   => HPS_DDR3_DQS_P_io,
+            memory_mem_dqs_n                 => HPS_DDR3_DQS_N_io,
+            memory_mem_odt                   => HPS_DDR3_ODT_o,
+            memory_mem_dm                    => HPS_DDR3_DM_o,
+            memory_oct_rzqin                 => HPS_DDR3_RZQ_i,
+
+            -- Pushbutton
+            hps_io_0_hps_io_gpio_inst_GPIO54 => HPS_KEY_io,
+
+            -- LED
+            hps_io_0_hps_io_gpio_inst_GPIO53 => HPS_LED_io,
+
+            -- AXI4Lite
+            axi4lite_0_input_reg_a_i         => keys_s,
+            axi4lite_0_input_reg_b_i         => switchs_s,
+            axi4lite_0_output_reg_a_o        => leds_s, -- LEDs
+            axi4lite_0_output_reg_b_o        => hex3_0_s, -- Hex3
+            axi4lite_0_output_reg_c_o        => hex5_4_s -- Hex5
+        );
+
+    keys_s(KEY_i'range)                          <= not KEY_i;
+    keys_s(keys_s'high downto KEY_i'high + 1)    <= (others => '0');
+
+    switchs_s(SW_i'range)                        <= SW_i;
+    switchs_s(switchs_s'high downto SW_i'high + 1) <= (others => '0');
+
+    LEDR_o <= leds_s(LEDR_o'range);
+
+    HEX0_o <= not hex3_0_s(6 downto 0);
+    HEX1_o <= not hex3_0_s(14 downto 8);
+    HEX2_o <= not hex3_0_s(22 downto 16);
+    HEX3_o <= not hex3_0_s(30 downto 24);
+    HEX4_o <= not hex5_4_s(6 downto 0);
+    HEX5_o <= not hex5_4_s(14 downto 8);
 
 end top;

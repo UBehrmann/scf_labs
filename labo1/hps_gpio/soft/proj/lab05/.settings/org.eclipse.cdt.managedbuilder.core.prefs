@@ -1,0 +1,11 @@
+eclipse.preferences.version=1
+environment/buildEnvironmentInclude/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/CPATH/delimiter=\:
+environment/buildEnvironmentInclude/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/CPATH/operation=remove
+environment/buildEnvironmentInclude/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/C_INCLUDE_PATH/delimiter=\:
+environment/buildEnvironmentInclude/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/C_INCLUDE_PATH/operation=remove
+environment/buildEnvironmentInclude/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/append=true
+environment/buildEnvironmentInclude/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/appendContributed=true
+environment/buildEnvironmentLibrary/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/LIBRARY_PATH/delimiter=\:
+environment/buildEnvironmentLibrary/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/LIBRARY_PATH/operation=remove
+environment/buildEnvironmentLibrary/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/append=true
+environment/buildEnvironmentLibrary/com.arm.eclipse.cdt.managedbuild.ds5.gcc.baremetal.config.exe.debug.var.gcc-6.2.0-arm-altera-eabi.141615994/appendContributed=true

@@ -98,13 +98,20 @@ architecture rtl of axi4lite_slave is
     signal axi_rdata_s         : std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
 
     --user declarations
+    -- Constants
     constant CST_ADDR_0_FOR_TST  : std_logic_vector(31 downto 0) := x"BADB100D";
-    signal internal_reg_s      : std_logic_vector(31 downto 0);
-    signal input_reg_A_s  : std_logic_vector(31 downto 0);
-    signal input_reg_B_s  : std_logic_vector(31 downto 0);
-    signal output_reg_A_s  : std_logic_vector(31 downto 0);
-    signal output_reg_B_s  : std_logic_vector(31 downto 0);
-    signal output_reg_C_s  : std_logic_vector(31 downto 0);
+    -- internals
+    signal internal_reg_s        : std_logic_vector(31 downto 0);
+    signal internal_edge_reg_s   : std_logic_vector(31 downto 0);
+    signal internal_edge_w_reg_s : std_logic_vector(31 downto 0);
+    -- user inputs
+    signal input_reg_A_s         : std_logic_vector(31 downto 0);
+    signal input_reg_A_prev_s    : std_logic_vector(31 downto 0);
+    signal input_reg_B_s         : std_logic_vector(31 downto 0);
+    -- user outputs
+    signal output_reg_A_s        : std_logic_vector(31 downto 0);
+    signal output_reg_B_s        : std_logic_vector(31 downto 0);
+    signal output_reg_C_s        : std_logic_vector(31 downto 0);
 
     signal dummy_cnt : unsigned(15 downto 0);
 
@@ -202,12 +209,14 @@ begin
         variable int_waddr_v : natural;
     begin
         if reset_s = '1' then
-            internal_reg_s <= (others => '0');
-            output_reg_B_s   <= (others => '0');
-            output_reg_A_s   <= (others => '0');
-            output_reg_C_s <= (others => '0');
-            axi_write_done_s <= '1';
+            internal_reg_s        <= (others => '0');
+            internal_edge_w_reg_s <= (others => '0');
+            output_reg_A_s        <= (others => '0');
+            output_reg_B_s        <= (others => '0');
+            output_reg_C_s        <= (others => '0');
+            axi_write_done_s      <= '1';
         elsif rising_edge(clk_i) then
+            internal_edge_w_reg_s <= (others => '0');
             axi_write_done_s <= '0';
             if axi_data_wren_s = '1' then
                 axi_write_done_s <= '1';
@@ -219,23 +228,43 @@ begin
                                         internal_reg_s(byte_index*8+7 downto byte_index*8) <= axi_wdata_i(byte_index*8+7 downto byte_index*8);
                                     end if;
                                 end loop;
+                    when 3  =>  for byte_index in 0 to (AXI_DATA_WIDTH/8-1) loop
+                                    if ( axi_wstrb_i(byte_index) = '1' ) then
+                                        -- Respective byte enables are asserted as per write strobe slave register 3
+                                        internal_edge_w_reg_s(byte_index*8+7 downto byte_index*8) <= axi_wdata_i(byte_index*8+7 downto byte_index*8);
+                                    end if;
+                                end loop;
                     when 5 => for byte_index in 0 to (AXI_DATA_WIDTH/8-1) loop
-                                  if ( axi_wstrb_i(byte_index) = '1' ) then
-                                      -- Respective byte enables are asserted as per write strobe slave register 5
-                                      output_reg_A_s(byte_index*8+7 downto byte_index*8) <= axi_wdata_i(byte_index*8+7 downto byte_index*8);
+                                    if ( axi_wstrb_i(byte_index) = '1' ) then
+                                        -- Respective byte enables are asserted as per write strobe slave register 5
+                                        output_reg_A_s(byte_index*8+7 downto byte_index*8) <= axi_wdata_i(byte_index*8+7 downto byte_index*8);
                                   end if;
                               end loop;
                     when 6   => for byte_index in 0 to (AXI_DATA_WIDTH/8-1) loop
                                     if ( axi_wstrb_i(byte_index) = '1' ) then
-                                        -- Respective byte enables are asserted as per write strobe slave register 5
+                                        -- Respective byte enables are asserted as per write strobe slave register 6
                                         output_reg_A_s(byte_index*8+7 downto byte_index*8) <= 
                                             output_reg_A_s(byte_index*8+7 downto byte_index*8) or
                                             axi_wdata_i(byte_index*8+7 downto byte_index*8);
                                     end if;
                                 end loop;
+                    when 7  =>  for byte_index in 0 to (AXI_DATA_WIDTH/8-1) loop
+                                    if ( axi_wstrb_i(byte_index) = '1' ) then
+                                        -- Respective byte enables are asserted as per write strobe slave register 7
+                                        output_reg_A_s(byte_index*8+7 downto byte_index*8) <=
+                                            output_reg_A_s(byte_index*8+7 downto byte_index*8) and
+                                            not axi_wdata_i(byte_index*8+7 downto byte_index*8);
+                                    end if;
+                                end loop;
+                    when 8  =>  for byte_index in 0 to (AXI_DATA_WIDTH/8-1) loop
+                                    if ( axi_wstrb_i(byte_index) = '1' ) then
+                                        -- Respective byte enables are asserted as per write strobe slave register 8
+                                        output_reg_B_s(byte_index*8+7 downto byte_index*8) <= axi_wdata_i(byte_index*8+7 downto byte_index*8);
+                                    end if;
+                                end loop;
                     when 9   => for byte_index in 0 to (AXI_DATA_WIDTH/8-1) loop
                                     if ( axi_wstrb_i(byte_index) = '1' ) then
-                                        -- Respective byte enables are asserted as per write strobe slave register 5
+                                        -- Respective byte enables are asserted as per write strobe slave register 9
                                         output_reg_C_s(byte_index*8+7 downto byte_index*8) <= axi_wdata_i(byte_index*8+7 downto byte_index*8);
                                     end if;
                                 end loop;
@@ -252,11 +281,16 @@ begin
     process (clk_i, reset_s)
     begin
         if reset_s = '1' then
-            input_reg_A_s <= (others => '0');
-            input_reg_B_s <= (others => '0');
+            input_reg_A_s       <= (others => '0');
+            input_reg_A_prev_s  <= (others => '0');
+            input_reg_B_s       <= (others => '0');
+            internal_edge_reg_s <= (others => '0');
         elsif rising_edge(clk_i) then
-            input_reg_A_s <= input_reg_A_i;
-            input_reg_B_s <= input_reg_B_i;
+            input_reg_A_prev_s  <= input_reg_A_s;
+            input_reg_A_s       <= input_reg_A_i;
+            input_reg_B_s       <= input_reg_B_i;
+            internal_edge_reg_s <= (internal_edge_reg_s and not internal_edge_w_reg_s)
+                                   or (input_reg_A_s and not input_reg_A_prev_s);
         end if;
     end process;
 
@@ -360,12 +394,13 @@ begin
     -- and the slave is ready to accept the read address.
     axi_data_rden_s <= axi_raddr_done_s and (not axi_rvalid_s);
 
-    process (axi_araddr_mem_s, 
-        internal_reg_s, 
-        input_reg_A_s, 
-        input_reg_B_s, 
-        output_reg_A_s, 
-        output_reg_B_s, 
+    process (axi_araddr_mem_s,
+        internal_reg_s,
+        input_reg_A_s,
+        internal_edge_reg_s,
+        input_reg_B_s,
+        output_reg_A_s,
+        output_reg_B_s,
         output_reg_C_s)
         --number address to access 32 or 64 bits data
         variable int_raddr_v  : natural;
@@ -379,6 +414,8 @@ begin
                 axi_rdata_s <= internal_reg_s;
             when 2 =>
                 axi_rdata_s <= input_reg_A_s;
+            when 3 =>
+                axi_rdata_s <= internal_edge_reg_s;
             when 4 =>
                 axi_rdata_s <= input_reg_B_s;
             when 5 =>
