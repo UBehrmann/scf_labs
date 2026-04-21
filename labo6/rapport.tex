@@ -1,0 +1,196 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% Pas de \usepackage[french]{babel} : il faut texlive-lang-french (french.ldf).
+% T1 + utf8 suffisent pour é, è, à, ô, etc.
+\usepackage{graphicx}
+\graphicspath{ {./imgs/} }
+\usepackage{fancyhdr} % For headers and footers
+\usepackage{geometry}
+\usepackage{longtable} % For long tables that can span multiple pages
+\usepackage{array}     % For better column formatting
+\usepackage{hyperref} % en dernier (liens cliquables)
+
+% Adjust margins
+\geometry{
+    top=4cm, 
+    bottom=2.5cm, 
+    left=2.5cm, 
+    right=2.5cm,
+    headheight=3cm, % Ensures sufficient space for header content
+    headsep=0.5cm,
+    }
+
+% Define the custom headers
+\fancypagestyle{firstpage}{% First page header style
+    \fancyhf{} % Clear all header/footer fields
+    \fancyhead[L]{%
+        \includegraphics[height=1.5cm]{heig_logo.png} \\
+    }
+    \fancyhead[R]{%
+        \includegraphics[height=1.5cm]{reds_logo.png} \\
+    }
+    \fancyfoot{} % No footer on the first page
+}
+
+% Define other pages style
+\fancypagestyle{otherpages}{%
+    \fancyhf{}
+    \fancyhead[L]{%
+        \includegraphics[height=1.5cm]{heig_logo.png} \\
+    }
+    \fancyhead[R]{%
+        \small Laboratoire 06 : Portage de Linux sur la carte DE-1 \\
+        Urs Behrmann \\
+    }
+    \fancyfoot[C]{\small page \thepage}
+}
+
+\author{Urs Behrmann}
+
+\setlength{\parskip}{1em} % Définit un espace entre chaque paragraphe
+\setlength{\parindent}{0pt} % Optionnel : enlève l'indentation des paragraphes
+
+\begin{document}
+
+\emergencystretch=1em % Ajoute une flexibilité d'espacement
+
+% First page content
+\thispagestyle{firstpage}
+
+
+\vspace*{2cm}
+\begin{center}
+    \Huge Laboratoire 06 \\
+    \vspace{0.2cm}
+    \Large Portage de Linux sur la carte DE-1\\
+    \vspace{1cm}
+    \small Départements : TIC\\
+    Unité d'enseignement SCF\\
+\end{center}
+
+\vspace{9cm}
+
+\renewcommand{\arraystretch}{1.5} % Adjust row height
+
+\begin{flushleft} % Left-align the table
+    \begin{tabular}{@{}l l@{}}
+        \textbf{Auteur :}        & \textbf{Urs Behrmann} \\
+        \textbf{Professeurs :}   & \textbf{Alberto Dassatti} \\
+                                 & \textbf{Yann Thomas} \\
+        \textbf{Assistant :}     & \textbf{Clément Dieperink} \\
+        \textbf{Classe :}        & \textbf{SCF} \\
+        \textbf{Salle de labo :} & \textbf{A07} \\
+        \textbf{Date :}          & \textbf{21.04.2026} \\
+    \end{tabular}
+\end{flushleft}
+
+\newpage
+
+% Apply the other pages style
+\pagestyle{otherpages}
+
+\renewcommand{\contentsname}{Table des matières}
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+Ce rapport décrit les étapes suivies pour démarrer Linux sur la carte DE1-SoC, mettre à jour le noyau vers la version 6.18 avec un device tree adapté, puis porter le programme de test du laboratoire 5 en application \emph{user-space} sous Linux (\texttt{/dev/mem}, \texttt{scp}, tests sur la carte).
+
+\section{Flash de la carte SD}
+
+J'ai utilisé le script fourni pour écrire l'image sur la carte SD :
+\texttt{./deploy\_img.sh -d sda -t de1soc -i ./de1soc.img}
+
+Avant d'exécuter le script, j'ai vérifié le périphérique avec \texttt{lsblk} pour ne pas écraser le disque du PC. La carte apparaissait comme \texttt{/dev/sda} (14.6G, amovible).
+
+\section{Vérification du démarrage}
+
+J'ai vérifié le boot sur la console série avec :
+\texttt{picocom -b 115200 /dev/ttyUSB0}
+
+Le démarrage était correct jusqu'au login. Ensuite j'ai configuré le réseau du PC dans le même sous-réseau que la carte (\texttt{192.168.0.X/24}) pour accéder en SSH avec \texttt{ssh root@192.168.0.2}.
+
+\section{Compilation du noyau Linux 6.18}
+
+J'ai récupéré les sources Linux mainline avec une profondeur limitée :
+\texttt{git clone --depth 1 --branch v6.18 https://github.com/torvalds/linux.git}
+
+La toolchain attendue dans \texttt{/opt} n'était pas présente sur mon système Kubuntu natif, donc j'ai utilisé celle déjà installée :
+\texttt{export ARCH=arm} et \texttt{export CROSS\_COMPILE=arm-linux-gnueabihf-}
+
+Ensuite j'ai compilé avec la configuration SoCFPGA :
+\texttt{make socfpga\_defconfig}
+\texttt{make -j\$(nproc) zImage dtbs modules}
+
+\newpage
+
+\section{Création du device tree DE1}
+
+Dans Linux 6.18, les DTS SoCFPGA sont dans :
+\texttt{arch/arm/boot/dts/intel/socfpga/}
+
+J'ai copié \texttt{socfpga\_cyclone5\_de0\_nano\_soc.dts} vers un nouveau fichier pour DE1, puis j'ai fait les modifications demandées :
+\begin{itemize}
+    \item suppression des n\oe uds \texttt{gpio0}, \texttt{gpio1}, \texttt{gpio2}
+    \item suppression du n\oe ud \texttt{i2c0}
+    \item modification des bootargs à \texttt{root=/dev/mmcblk0p3 rw rootwait} avant \texttt{earlyprintk}
+\end{itemize}
+
+J'ai ensuite ajouté le nouveau \texttt{.dtb} dans le \texttt{Makefile} du dossier SoCFPGA et recompilé le device tree.
+
+\section{Génération de l'image ITB}
+
+J'ai modifié \texttt{de1soc.its} pour inclure les bons fichiers (\texttt{zImage} compilé et le nouveau \texttt{.dtb}), puis j'ai généré l'image :
+\texttt{mkimage -f de1soc.its de1soc.itb}
+
+Dans mon fichier \texttt{de1soc.its}, les chemins sont des chemins absolus vers l'emplacement local où j'ai récupéré Linux 6.18.0, c'est-à-dire dans mon dossier personnel (\texttt{\~{}/linux-6.18.0}).
+
+La commande \texttt{mkimage -l de1soc.itb} a confirmé que l'image contenait bien le kernel et le device tree.
+
+\section{Copie sur la carte SD et test}
+
+J'ai monté la partition BOOT de la carte SD (\texttt{/dev/sda1}) et copié \texttt{de1soc.itb}. Ensuite j'ai démonté la carte proprement.
+
+Après redémarrage de la carte, la validation finale s'est faite via la console série et la commande \texttt{uname -r} pour vérifier la version du noyau.
+
+\newpage
+
+\section{Test du bridge \texttt{lwhps2fpga} et \texttt{devmem}}
+
+J'ai utilisé \texttt{devmem} sur la carte pour lire la mémoire physique du bridge. La lecture à l'adresse de base \texttt{0xFF200000} (mot 32 bits, option \texttt{w}) renvoie la constante attendue de l'IP AXI (\texttt{0xBADB100D}), ce qui confirme que l'accès au bridge fonctionne.
+
+Pour les offsets du design de base (switchs \texttt{0x4B000}, touches \texttt{0x4B004}), la commande \texttt{devmem} de BusyBox a parfois renvoyé une erreur \texttt{mmap: Invalid argument} sur certaines adresses, alors qu'un accès via \texttt{/dev/mem} dans un programme (voir section suivante) fonctionnait. J'ai donc gardé \texttt{devmem} pour la lecture à \texttt{0xFF200000} et le programme pour les autres offsets.
+
+\section{Adaptation du programme du laboratoire 5 sous Linux}
+
+J'ai repris la logique du laboratoire 5 (registres AXI, LEDs, afficheurs, touches) et je l'ai portée en application \emph{user-space} sous Linux :
+
+\begin{itemize}
+    \item ouverture de \texttt{/dev/mem} et \texttt{mmap} sur une fenêtre assez grande à partir de \texttt{0xFF200000} pour couvrir à la fois les registres de l'IP (petits offsets) et les emplacements du bridge utilisés au laboratoire 6 (offsets \texttt{0x4B000} / \texttt{0x4B004}) ;
+    \item remplacement des accès directs à l'adresse physique par des lectures / écritures via le pointeur retourné par \texttt{mmap} ;
+    \item compilation croisée avec \texttt{arm-linux-gnueabihf-gcc} et un \texttt{Makefile} dans \texttt{labo6/src/}, cible \texttt{axi4lite\_io\_linux} ;
+    \item copie du binaire sur la carte avec \texttt{scp axi4lite\_io\_linux root@192.168.0.2:/root/}, puis exécution en \texttt{root} sur la carte.
+\end{itemize}
+
+Les tests côté Linux se sont déroulés correctement : lecture des switchs et touches sur le bridge, lecture de la constante AXI à \texttt{0xFF200000} avec \texttt{devmem}, et comportement attendu du programme sur la console série (boucle bridge puis test des registres et interaction avec l'IP lorsque le FPGA contient le bon design).
+
+\newpage
+
+\section{Reprogrammation du FPGA et problème de licence}
+
+Pour valider complètement le laboratoire 6, il faut reprogrammer le FPGA avec le bitstream du laboratoire 5 (\texttt{pgm\_fpga.py} ou chargement du preloader / bitstream via les scripts du dépôt). Depuis la VM de laboratoire (\texttt{reds@vmeda2026}, dossier \texttt{de1\_scripts}), l'exécution de \texttt{python3 upld\_hps.py} a échoué.
+
+Les messages indiquent une erreur JTAG / AJI (\texttt{AJI failed to send data}, \texttt{Encounter JTAG AJI error while accessing HPS}, \texttt{Fail to power up the System and Debug power}) et le lancement de \texttt{quartus\_hps} se termine sans succès. Le journal mélange aussi du texte lié à la licence Intel (\emph{Quartus Prime License Agreement}, etc.).
+
+J'étais connecté au VPN et j'arrivais à ouvrir Quartus et Arm DS. En revanche, le \emph{Programmer} en ligne de commande (\texttt{quartus\_hps}, scripts du labo) a échoué avec des messages qui évoquent autant la licence Intel que des erreurs JTAG / AJI. J'ai l'impression que c'est un blocage lié à la licence. Comme la partie Linux sur la carte a fonctionné et que la programmation FPGA avait déjà marché au laboratoire précédent, je pars du principe que la liaison matérielle est correcte et que le problème vient surtout que je ne suis pas dans le réseau de la HEIG. Je ne pourrai vérifier et reprogrammer le \texttt{.rbf} du labo 5 de façon fiable qu'en étant de nouveau physiquement à la HEIG ; d'ici là, le design chargé au boot par U-Boot est resté celui par défaut pour les parties qui en dépendent.
+
+\newpage
+
+\section{Utilisation d'outil IA}
+
+Pour ce rapport, j'ai utilisé un assistant IA pour m'aider à structurer les étapes et à reformuler certaines phrases. Les manipulations techniques, les tests et les validations ont été réalisés par moi.
+
+\end{document}

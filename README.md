@@ -21,3 +21,5 @@ Preloader
 ```bash
 python3 upld_hps.py
 ```
+
+lsblk -> liste des disques

@@ -7,3 +7,9 @@
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+
+# Labo 6 — image disque brute (plusieurs Go ; ne pas versionner sur GitHub)
+labo6/de1soc.img
+# Artefacts de compilation locale
+labo6/src/*.o
+labo6/src/axi4lite_io_linux
