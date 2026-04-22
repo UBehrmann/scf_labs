@@ -125,9 +125,6 @@ int main(void)
         return -1;
     }
 
-    printf("Test sortie LED/HEX sur l'IP AXI (si rien ne bouge, reprogrammer le FPGA avec le .rbf labo 5).\n");
-    hw_led_hex_selftest();
-
     for (;;) {
         uint8_t keys_edges = read_keys_edges();
 
@@ -151,7 +148,6 @@ int main(void)
         }
         seg7_write_int((uint32_t)val);
 
-        /* Laisser du temps au FPGA pour les fronts touches (Linux plus rapide que le bare metal). */
         usleep(15000);
     }
 }

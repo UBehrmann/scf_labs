@@ -36,11 +36,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-static inline void mmio_sync_after_write(void)
-{
-    __sync_synchronize();
-}
-
 #define MAP_PAGE_SIZE 4096UL
 #define MAP_PAGE_MASK (MAP_PAGE_SIZE - 1UL)
 
@@ -112,13 +107,11 @@ uint32_t read_lw_bridge_keys(void)
 static void seg7_write_3_0(uint32_t value)
 {
     AXI_LW_REG(REG_HEX3_0) = value & BITS_HEX3_0;
-    mmio_sync_after_write();
 }
 
 static void seg7_write_5_4(uint32_t value)
 {
     AXI_LW_REG(REG_HEX5_4) = value & BITS_HEX5_4;
-    mmio_sync_after_write();
 }
 
 uint32_t read_cst(void)
@@ -129,7 +122,6 @@ uint32_t read_cst(void)
 void write_test(uint32_t val)
 {
     AXI_LW_REG(REG_TEST) = val;
-    mmio_sync_after_write();
 }
 
 uint32_t read_test(void)
@@ -145,7 +137,6 @@ uint8_t read_keys(void)
 void keys_ack(uint8_t keys)
 {
     AXI_LW_REG(REG_KEYS_EDGE_CAPTURE) = (uint32_t)(keys & BITS_KEY);
-    mmio_sync_after_write();
 }
 
 uint8_t read_keys_edges(void)
@@ -165,7 +156,6 @@ void set_leds(uint16_t leds)
     uint32_t cur = AXI_LW_REG(REG_LEDS);
     cur |= (uint32_t)(leds & BITS_LEDS);
     AXI_LW_REG(REG_LEDS) = cur;
-    mmio_sync_after_write();
 }
 
 void clear_leds(uint16_t leds)
@@ -173,7 +163,6 @@ void clear_leds(uint16_t leds)
     uint32_t cur = AXI_LW_REG(REG_LEDS);
     cur &= ~(uint32_t)(leds & BITS_LEDS);
     AXI_LW_REG(REG_LEDS) = cur;
-    mmio_sync_after_write();
 }
 
 void seg7_write_int(uint32_t value)
@@ -191,35 +180,6 @@ void seg7_write_int(uint32_t value)
 
 void seg7_clear(void)
 {
-    seg7_write_3_0(0u);
-    seg7_write_5_4(0u);
-}
-
-void hw_led_hex_selftest(void)
-{
-    unsigned i;
-    uint32_t eight;
-    uint32_t hex;
-
-    /* LED : une LED a la fois */
-    AXI_LW_REG(REG_LEDS) = 0u;
-    mmio_sync_after_write();
-    for (i = 0u; i < 10u; i++) {
-        AXI_LW_REG(REG_LEDS) = (1u << (i % 10u));
-        mmio_sync_after_write();
-        usleep(80000);
-    }
-    AXI_LW_REG(REG_LEDS) = 0u;
-    mmio_sync_after_write();
-
-    /* HEX : quatre 8 sur HEX3..0, deux 8 sur HEX5..4 */
-    eight = (uint32_t)VAL2SEG[8u];
-    hex   = eight | (eight << 8) | (eight << 16) | (eight << 24);
-    AXI_LW_REG(REG_HEX3_0) = hex & BITS_HEX3_0;
-    mmio_sync_after_write();
-    AXI_LW_REG(REG_HEX5_4) = (eight | (eight << 8)) & BITS_HEX5_4;
-    mmio_sync_after_write();
-    usleep(400000);
     seg7_write_3_0(0u);
     seg7_write_5_4(0u);
 }
