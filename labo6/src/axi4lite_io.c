@@ -33,36 +33,6 @@
 #include "axi_lw.h"
 #include "io_functions.h"
 
-static volatile sig_atomic_t bridge_stop;
-
-static void bridge_sighandler(int sig)
-{
-    (void)sig;
-    bridge_stop = 1;
-}
-
-/* Boucle lecture switchs / touches sur le bridge (meme adresses que devmem). */
-static void bridge_poll_loop(void)
-{
-    bridge_stop = 0;
-    if (signal(SIGINT, bridge_sighandler) == SIG_ERR) {
-        perror("signal");
-        return;
-    }
-
-    printf("Boucle bridge lwhps2fpga (offsets 0x4B000 / 0x4B004) — bouger SW / KEYS.\n");
-    printf("Ctrl+C pour passer au test IP AXI.\n");
-
-    while (!bridge_stop) {
-        printf("\r  SW (bridge) 0x%08" PRIX32 "   KEYS (bridge) 0x%08" PRIX32 "   ",
-               read_lw_bridge_switches(), read_lw_bridge_keys());
-        fflush(stdout);
-        usleep(150000);
-    }
-    printf("\n(bridge) arrete.\n\n");
-    (void)signal(SIGINT, SIG_DFL);
-}
-
 static uint16_t val   = 0u;
 static uint8_t  legal = 1u;
 
@@ -106,9 +76,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    bridge_poll_loop();
-
-    printf("Lab 5 / 6 — AXI4-Lite FPGA IO\n");
+    printf("Lab 6 — AXI4-Lite FPGA IO\n");
 
     uint32_t cste = read_cst();
     printf("Constante : 0x%08" PRIX32 " (lu)\n", cste);
