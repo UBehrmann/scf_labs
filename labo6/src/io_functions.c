@@ -1,6 +1,28 @@
 /*****************************************************************************************
- * HEIG-VD / REDS — SCF Lab 6 — User-space I/O via /dev/mem
- *****************************************************************************************/
+ * HEIG-VD
+ * Haute Ecole d'Ingenerie et de Gestion du Canton de Vaud
+ * School of Business and Engineering in Canton de Vaud
+ *****************************************************************************************
+ * REDS Institute
+ * Reconfigurable Embedded Digital Systems
+ *****************************************************************************************
+ *
+ * File                 : axi4lite_io.c
+ * Author               : UBN
+ * Date                 : 21.04.2026
+ *
+ * Context              : AXI4-Lite FPGA IO laboratory
+ *
+ *****************************************************************************************
+ * Brief: I/O helpers for AXI4-Lite FPGA IO laboratory
+ *
+ *****************************************************************************************
+ * Modifications :
+ * Ver    Date        Student      Comments
+ * 1.0    13.04.2026  UBN          Initial version.
+ * 1.1    21.04.2026  UBN          Update version.
+ *
+*****************************************************************************************/
 
 #include <stdint.h>
 
@@ -8,7 +30,6 @@
 #include "hex_val.h"
 #include "io_functions.h"
 
-#ifdef LINUX_APP
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,22 +109,16 @@ uint32_t read_lw_bridge_keys(void)
     return *(volatile uint32_t *)(axi_lw_virt_base + LW_BRIDGE_KEYS_OFFSET);
 }
 
-#endif /* LINUX_APP */
-
 static void seg7_write_3_0(uint32_t value)
 {
     AXI_LW_REG(REG_HEX3_0) = value & BITS_HEX3_0;
-#ifdef LINUX_APP
     mmio_sync_after_write();
-#endif
 }
 
 static void seg7_write_5_4(uint32_t value)
 {
     AXI_LW_REG(REG_HEX5_4) = value & BITS_HEX5_4;
-#ifdef LINUX_APP
     mmio_sync_after_write();
-#endif
 }
 
 uint32_t read_cst(void)
@@ -114,9 +129,7 @@ uint32_t read_cst(void)
 void write_test(uint32_t val)
 {
     AXI_LW_REG(REG_TEST) = val;
-#ifdef LINUX_APP
     mmio_sync_after_write();
-#endif
 }
 
 uint32_t read_test(void)
@@ -132,9 +145,7 @@ uint8_t read_keys(void)
 void keys_ack(uint8_t keys)
 {
     AXI_LW_REG(REG_KEYS_EDGE_CAPTURE) = (uint32_t)(keys & BITS_KEY);
-#ifdef LINUX_APP
     mmio_sync_after_write();
-#endif
 }
 
 uint8_t read_keys_edges(void)
@@ -154,9 +165,7 @@ void set_leds(uint16_t leds)
     uint32_t cur = AXI_LW_REG(REG_LEDS);
     cur |= (uint32_t)(leds & BITS_LEDS);
     AXI_LW_REG(REG_LEDS) = cur;
-#ifdef LINUX_APP
     mmio_sync_after_write();
-#endif
 }
 
 void clear_leds(uint16_t leds)
@@ -164,9 +173,7 @@ void clear_leds(uint16_t leds)
     uint32_t cur = AXI_LW_REG(REG_LEDS);
     cur &= ~(uint32_t)(leds & BITS_LEDS);
     AXI_LW_REG(REG_LEDS) = cur;
-#ifdef LINUX_APP
     mmio_sync_after_write();
-#endif
 }
 
 void seg7_write_int(uint32_t value)
@@ -188,7 +195,6 @@ void seg7_clear(void)
     seg7_write_5_4(0u);
 }
 
-#ifdef LINUX_APP
 void hw_led_hex_selftest(void)
 {
     unsigned i;
@@ -217,4 +223,3 @@ void hw_led_hex_selftest(void)
     seg7_write_3_0(0u);
     seg7_write_5_4(0u);
 }
-#endif

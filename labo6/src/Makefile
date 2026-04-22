@@ -1,7 +1,7 @@
 # Cross-compile pour la DE1-SoC (ARM 32 bits). Sur la carte : ./axi4lite_io_linux
 # Si besoin : make CC=arm-linux-gnueabihf-gcc
 CC      := arm-linux-gnueabihf-gcc
-CFLAGS  ?= -O2 -Wall -Wextra -std=c99 -DLINUX_APP -D_DEFAULT_SOURCE
+CFLAGS  ?= -O2 -Wall -Wextra -std=c99 -D_DEFAULT_SOURCE
 LDFLAGS ?=
 
 TARGET  := axi4lite_io_linux

@@ -26,21 +26,13 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
-
-#ifdef LINUX_APP
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
-#endif
 
 #include "axi_lw.h"
 #include "io_functions.h"
 
-#ifndef LINUX_APP
-int __auto_semihosting;
-#endif
-
-#ifdef LINUX_APP
 static volatile sig_atomic_t bridge_stop;
 
 static void bridge_sighandler(int sig)
@@ -70,7 +62,6 @@ static void bridge_poll_loop(void)
     printf("\n(bridge) arrete.\n\n");
     (void)signal(SIGINT, SIG_DFL);
 }
-#endif
 
 static uint16_t val   = 0u;
 static uint8_t  legal = 1u;
@@ -109,7 +100,6 @@ static void key3(void)
 
 int main(void)
 {
-#ifdef LINUX_APP
     int ret = init_IO();
     if (ret != 0) {
         fprintf(stderr, "init_IO a echoue (%d)\n", ret);
@@ -117,7 +107,6 @@ int main(void)
     }
 
     bridge_poll_loop();
-#endif
 
     printf("Lab 5 / 6 — AXI4-Lite FPGA IO\n");
 
@@ -132,16 +121,12 @@ int main(void)
     printf("Test : 0x%08" PRIX32 " (lu)\n", testValCheck);
 
     if (cste != AXI_CST || testVal != testValCheck) {
-#ifdef LINUX_APP
         (void)deinit_IO();
-#endif
         return -1;
     }
 
-#ifdef LINUX_APP
     printf("Test sortie LED/HEX sur l'IP AXI (si rien ne bouge, reprogrammer le FPGA avec le .rbf labo 5).\n");
     hw_led_hex_selftest();
-#endif
 
     for (;;) {
         uint8_t keys_edges = read_keys_edges();
@@ -166,9 +151,7 @@ int main(void)
         }
         seg7_write_int((uint32_t)val);
 
-#ifdef LINUX_APP
         /* Laisser du temps au FPGA pour les fronts touches (Linux plus rapide que le bare metal). */
         usleep(15000);
-#endif
     }
 }

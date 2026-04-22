@@ -1,6 +1,28 @@
 /*****************************************************************************************
- * HEIG-VD / REDS — SCF Lab 6 — I/O helpers (Linux / bare metal)
- *****************************************************************************************/
+ * HEIG-VD
+ * Haute Ecole d'Ingenerie et de Gestion du Canton de Vaud
+ * School of Business and Engineering in Canton de Vaud
+ *****************************************************************************************
+ * REDS Institute
+ * Reconfigurable Embedded Digital Systems
+ *****************************************************************************************
+ *
+ * File                 : axi4lite_io.c
+ * Author               : UBN
+ * Date                 : 21.04.2026
+ *
+ * Context              : AXI4-Lite FPGA IO laboratory
+ *
+ *****************************************************************************************
+ * Brief: I/O helpers for AXI4-Lite FPGA IO laboratory
+ *
+ *****************************************************************************************
+ * Modifications :
+ * Ver    Date        Student      Comments
+ * 1.0    13.04.2026  UBN          Initial version.
+ * 1.1    21.04.2026  UBN          Update version.
+ *
+*****************************************************************************************/
 
 #ifndef IO_FUNCTIONS_H
 #define IO_FUNCTIONS_H
@@ -9,7 +31,6 @@
 
 #define AXI_CST 0xBADB100Du
 
-#ifdef LINUX_APP
 int init_IO(void);
 int deinit_IO(void);
 
@@ -19,7 +40,6 @@ uint32_t read_lw_bridge_keys(void);
 
 /* Court test LED / HEX sur l'IP AXI (apres chargement du .rbf labo 5). */
 void hw_led_hex_selftest(void);
-#endif
 
 uint32_t read_cst(void);
 void     write_test(uint32_t val);

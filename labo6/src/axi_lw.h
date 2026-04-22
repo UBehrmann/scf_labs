@@ -42,13 +42,9 @@
 #define REG_HEX3_0	            0x0020 /* [31] unused [30-24] HEX3 - [23] unused [22-16] HEX2 - [15] unused [14-8] HEX1 - [7] unused [6-0] HEX0	-- DE1-SoC - Hex 3-0          */
 #define REG_HEX5_4	            0x0024 /* [31-15] unused [14-8] HEX5 - [7] unused [6-0] HEX4	                                                -- DE1-SoC - Hex 5-4          */
 
-// ACCESS MACROS
-#ifdef LINUX_APP
+// ACCESS MACROS (Linux user-space mapped base)
 extern volatile uint8_t *axi_lw_virt_base;
 #define AXI_LW_REG(_x_) (*(volatile uint32_t *)(axi_lw_virt_base + (uintptr_t)(_x_)))
-#else
-#define AXI_LW_REG(_x_) (*(volatile uint32_t *)(AXI_LW_HPS_FPGA_BASE_ADD + (uintptr_t)(_x_)))
-#endif
 
 // Define bits usage
 #define BITS_SWITCHS   	0x000003FF
