@@ -15,3 +15,13 @@ labo6/src/*.o
 labo6/src/axi4lite_io_linux
 
 .*
+!.gitignore
+
+# Artefacts de compilation locale
+*.cmd
+*.mod
+*.o
+*.ko
+*.mod.c
+*.symvers
+*.order

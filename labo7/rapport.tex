@@ -1,0 +1,171 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\graphicspath{ {./imgs/} }
+\usepackage{fancyhdr} % For headers and footers
+\usepackage{geometry}
+\usepackage{hyperref} % For clickable links
+\usepackage{longtable} % For long tables that can span multiple pages
+\usepackage{array}     % For better column formatting
+
+% Adjust margins
+\geometry{
+    top=4cm, 
+    bottom=2.5cm, 
+    left=2.5cm, 
+    right=2.5cm,
+    headheight=3cm, % Ensures sufficient space for header content
+    headsep=0.5cm,
+    }
+
+% Define the custom headers
+\fancypagestyle{firstpage}{% First page header style
+    \fancyhf{} % Clear all header/footer fields
+    \fancyhead[L]{%
+        \includegraphics[height=1.5cm]{heig_logo.png} \\
+    }
+    \fancyhead[R]{%
+        \includegraphics[height=1.5cm]{reds_logo.png} \\
+    }
+    \fancyfoot{} % No footer on the first page
+}
+
+% Define other pages style
+\fancypagestyle{otherpages}{%
+    \fancyhf{}
+    \fancyhead[L]{%
+        \includegraphics[height=1.5cm]{heig_logo.png} \\
+    }
+    \fancyhead[R]{%
+        \small Laboratoire 7: Driver de Linux \\
+        Urs Behrmann \\
+    }
+    \fancyfoot[C]{\small page \thepage}
+}
+
+\author{Urs Behrmann}
+
+\setlength{\parskip}{1em} % Définit un espace entre chaque paragraphe
+\setlength{\parindent}{0pt} % Optionnel : enlève l'indentation des paragraphes
+
+\begin{document}
+
+\emergencystretch=1em % Ajoute une flexibilité d'espacement
+
+% First page content
+\thispagestyle{firstpage}
+
+
+\vspace*{2cm}
+\begin{center}
+    \Huge Laboratoire 7 \\
+    \vspace{0.2cm}
+    \Large Driver de Linux\\
+    \vspace{1cm}
+    \small Départements : TIC\\
+    Unité d'enseignement SCF\\
+\end{center}
+
+\vspace{9cm}
+
+\renewcommand{\arraystretch}{1.5} % Adjust row height
+
+\begin{flushleft} % Left-align the table
+    \begin{tabular}{@{}l l@{}}
+        \textbf{Auteur :}        & \textbf{Urs Behrmann} \\
+        \textbf{Professeurs :}   & \textbf{Alberto Dassatti} \\
+                                 & \textbf{Yann Thomas} \\
+        \textbf{Assistant :}     & \textbf{Clément Dieperink} \\
+        \textbf{Classe :}        & \textbf{SCF} \\
+        \textbf{Salle de labo :} & \textbf{A09} \\
+        \textbf{Date :}          & \textbf{28.04.2026} \\
+    \end{tabular}
+\end{flushleft}
+
+\newpage
+
+% Apply the other pages style
+\pagestyle{otherpages}
+
+\tableofcontents
+
+\newpage
+
+\section{Objectif}
+L'objectif du laboratoire est de développer un driver Linux permettant d'interfacer
+notre IP AXI4-Lite avec une application user-space.
+Le driver doit offrir une interface simple d'utilisation depuis Linux, tout en
+vérifiant à l'initialisation que le design chargé dans le FPGA est correct.
+
+\section{Interface mise en place}
+L'interface choisie est un \textbf{driver caractère} exposé via le noeud
+\texttt{/dev/axi\_lw}.
+Le module est chargé avec \texttt{insmod}, puis l'application user-space ouvre
+ce device et communique avec le kernel par \texttt{ioctl}.
+
+Le driver utilise un \texttt{miscdevice} afin de réduire le code de création
+du périphérique (pas de \texttt{cdev/class/device} manuel).
+
+\subsection*{Justification du choix}
+J'ai choisi un driver caractère chargé manuellement, en cohérence avec ce qui a
+été vu dans le cours de drivers Linux et pour garder une mise en oeuvre simple
+dans le cadre du laboratoire.
+Une alternative aurait été un driver auto-chargé (\textit{platform driver}),
+mais cette approche demandait d'adapter le Device Tree.
+Pour ce laboratoire, l'effort supplémentaire côté Device Tree n'était pas
+nécessaire.
+Le compromis retenu est donc d'utiliser \texttt{insmod} à chaque itération de
+test, ce qui restait acceptable par rapport à la complexité d'une adaptation DT.
+
+\subsection*{Accès matériel}
+Le module mappe la zone AXI lightweight à l'adresse \texttt{0xFF200000}
+(\texttt{ioremap}).
+Au chargement, il lit le registre constant (\texttt{REG\_CST}) et compare avec
+\texttt{0xBADB100D}. Si la valeur ne correspond pas, le module retourne
+\texttt{-ENODEV} et refuse de s'initialiser.
+
+\newpage
+
+\subsection*{API ioctl utilisée}
+Les commandes \texttt{ioctl} retenues pour l'application de test sont:
+\begin{itemize}
+    \item lecture: \texttt{GET\_CST}, \texttt{GET\_TEST}, \texttt{GET\_SWITCH}, \texttt{GET\_KEYS\_EDGE}
+    \item écriture: \texttt{SET\_TEST}, \texttt{SET\_LEDS}, \texttt{CLR\_LEDS}, \texttt{SET\_HEX3\_0}, \texttt{SET\_HEX5\_4}
+\end{itemize}
+
+Le choix de \texttt{GET\_KEYS\_EDGE} (avec acquittement automatique) permet un
+comportement événementiel: une action par appui de touche, sans répétition
+continue pendant un appui long.
+
+\section{Application user-space}
+L'application \texttt{axi\_ctl.c} a été adaptée pour reprendre la logique du
+labo 6:
+\begin{itemize}
+    \item lecture et vérification de la constante
+    \item écriture/lecture du registre de test
+    \item boucle principale avec gestion des touches KEY0..KEY3
+    \item affichage de la valeur sur les 7 segments et gestion des LEDs
+\end{itemize}
+
+La différence principale est que l'accès matériel direct (\texttt{/dev/mem})
+est remplacé par l'interface du driver.
+
+\section{Validation}
+Les tests effectués:
+\begin{itemize}
+    \item compilation du module (\texttt{axi\_driver.ko})
+    \item chargement avec \texttt{insmod} et création de \texttt{/dev/axi\_lw}
+    \item exécution de l'application user-space et vérification du comportement
+\end{itemize}
+
+Le module se charge correctement et l'application permet de piloter les
+registres de l'IP via \texttt{ioctl}.
+
+
+\newpage
+
+\section{Utilisation d'outil IA}
+
+Pour ce rapport, j'ai utilisé un assistant IA pour m'aider à structurer les étapes et à reformuler certaines phrases. Les manipulations techniques, les tests et les validations ont été réalisés par moi.
+
+\end{document}
