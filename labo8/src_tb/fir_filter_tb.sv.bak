@@ -18,7 +18,7 @@ module fir_filter_tb;
     ARCH_SEQUENTIAL,
     ARCH_PIPELINE
   } arch_t;
-  localparam arch_t ARCH = ARCH_PIPELINE;
+  localparam arch_t ARCH = ARCH_COMBIARCH_PIPELINE;
 
   // ---------------------------------------------------------------------------
   // Signals

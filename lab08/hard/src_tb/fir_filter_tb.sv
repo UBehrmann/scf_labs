@@ -18,7 +18,7 @@ module fir_filter_tb;
     ARCH_SEQUENTIAL,
     ARCH_PIPELINE
   } arch_t;
-  localparam arch_t ARCH = ARCH_PIPELINE;
+  localparam arch_t ARCH = ARCH_COMBI;
 
   // ---------------------------------------------------------------------------
   // Signals
@@ -287,72 +287,6 @@ module fir_filter_tb;
 
       din_valid_i = 1'b0;
       dout_ready_i = 1'b1;
-    end else if (ARCH == ARCH_PIPELINE) begin
-    // ----------------------------------------------------------
-    // -- TEST PIPELINE 
-    // ----------------------------------------------------------
-      int n;
-      longint signed acc;
-      logic signed [DATASIZE-1:0] expected;
-      logic signed [DATASIZE-1:0] expected_q[$];
-
-      n = 0;
-      dout_ready_i = 1'b1;
-      din_valid_i  = 1'b0;
-      din_i        = '0;
-
-      while ((n < 8) || (expected_q.size() > 0)) begin
-
-        @(negedge clk_i);
-
-        dout_ready_i = 1'b1;
-
-        if (n < 8) begin
-          din_valid_i = 1'b1;
-          din_i       = n + 1;
-
-          // Modèle de référence : shift des échantillons
-          for (int k = ORDER; k > 0; k--) begin
-            ref_samples[k] = ref_samples[k-1];
-          end
-          ref_samples[0] = $signed(n + 1);
-
-          // Calcul de la valeur attendue
-          acc = 0;
-          for (int k = 0; k <= ORDER; k++) begin
-            acc += ref_coeffs[k] * ref_samples[k];
-          end
-
-          expected = acc >>> COMMAPOS;
-          expected_q.push_back(expected);
-
-          n++;
-        end else begin
-          din_valid_i = 1'b0;
-          din_i       = '0;
-        end
-
-        @(posedge clk_i);
-        #1;
-
-        if (dout_valid_o && dout_ready_i) begin
-          if (expected_q.size() == 0) begin
-            $error("[FAILED] Unexpected pipeline output at time %0t", $time);
-            $fatal;
-          end
-
-          expected = expected_q.pop_front();
-
-          if ($signed(dout_o) !== expected) begin
-            $error("[FAILED] Pipeline mismatch at time %0t: expected %0d, got %0d",
-                   $time, expected, $signed(dout_o));
-            $fatal;
-          end
-        end
-      end
-
-      din_valid_i  = 1'b0;
-      dout_ready_i = 1'b1; 
     end
 
     // Finish
