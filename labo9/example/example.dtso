@@ -1,0 +1,30 @@
+/dts-v1/;
+/plugin/;
+
+/* Change status of existing labeled node */
+&labeled_node {
+	status = "okay";
+};
+
+/* Modify an unlabeled node */
+&{/full/path/to/node} {
+	something = <&labeled_node>;
+
+	/* Ranges example for a region
+	 * 0xAAA: Start address of child nodes (can be usefull if multiple ranges are needed)
+	 * 0xBBB: Start address of parents node (here physical address of the region)
+	 * 0xCCC: Total length of the region
+	 */
+	ranges = <0xAAA 0xBBB 0xCCC>;
+	/* This is also possible, then the full address needs to be put in child nodes */
+	ranges;
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+	example: example@0 {
+		compatible = "example";
+
+		/* Resulting base address will be (0xBBB + (0xDDD - 0xAAA)) */
+		reg = <0xDDD 0xEEE>;
+	};
+};
