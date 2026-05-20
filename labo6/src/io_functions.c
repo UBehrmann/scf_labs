@@ -49,8 +49,8 @@ static int      dev_mem_fd = -1;
 static void    *map_base   = MAP_FAILED;
 volatile uint8_t *axi_lw_virt_base;
 
-int init_IO(void)
-{
+int init_IO(void) {
+
     if (axi_lw_virt_base != NULL) {
         return 0;
     }
@@ -63,6 +63,7 @@ int init_IO(void)
 
     map_base = mmap(NULL, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, dev_mem_fd,
                     (off_t)(AXI_LW_HPS_FPGA_BASE_ADD & ~MAP_PAGE_MASK));
+
     if (map_base == MAP_FAILED) {
         perror("mmap");
         close(dev_mem_fd);
@@ -75,8 +76,8 @@ int init_IO(void)
     return 0;
 }
 
-int deinit_IO(void)
-{
+int deinit_IO(void) {
+
     int err = 0;
 
     if (map_base != MAP_FAILED) {
@@ -87,6 +88,7 @@ int deinit_IO(void)
         map_base         = MAP_FAILED;
         axi_lw_virt_base = NULL;
     }
+
     if (dev_mem_fd >= 0) {
         close(dev_mem_fd);
         dev_mem_fd = -1;
@@ -94,79 +96,79 @@ int deinit_IO(void)
     return err;
 }
 
-uint32_t read_lw_bridge_switches(void)
-{
+uint32_t read_lw_bridge_switches(void) {
+
     return *(volatile uint32_t *)(axi_lw_virt_base + LW_BRIDGE_SWITCH_OFFSET);
 }
 
-uint32_t read_lw_bridge_keys(void)
-{
+uint32_t read_lw_bridge_keys(void) {
+
     return *(volatile uint32_t *)(axi_lw_virt_base + LW_BRIDGE_KEYS_OFFSET);
 }
 
-static void seg7_write_3_0(uint32_t value)
-{
+static void seg7_write_3_0(uint32_t value) {
+
     AXI_LW_REG(REG_HEX3_0) = value & BITS_HEX3_0;
 }
 
-static void seg7_write_5_4(uint32_t value)
-{
+static void seg7_write_5_4(uint32_t value) {
+    
     AXI_LW_REG(REG_HEX5_4) = value & BITS_HEX5_4;
 }
 
-uint32_t read_cst(void)
-{
+uint32_t read_cst(void) {
+
     return AXI_LW_REG(REG_CST);
 }
 
-void write_test(uint32_t val)
-{
+void write_test(uint32_t val) {
+    
     AXI_LW_REG(REG_TEST) = val;
 }
 
-uint32_t read_test(void)
-{
+uint32_t read_test(void) {
+
     return AXI_LW_REG(REG_TEST);
 }
 
-uint8_t read_keys(void)
-{
+uint8_t read_keys(void) {
+
     return (uint8_t)(AXI_LW_REG(REG_KEYS) & BITS_KEY);
 }
 
-void keys_ack(uint8_t keys)
-{
+void keys_ack(uint8_t keys) {
+
     AXI_LW_REG(REG_KEYS_EDGE_CAPTURE) = (uint32_t)(keys & BITS_KEY);
 }
 
-uint8_t read_keys_edges(void)
-{
+uint8_t read_keys_edges(void) {
+
     uint8_t edges = (uint8_t)(AXI_LW_REG(REG_KEYS_EDGE_CAPTURE) & BITS_KEY);
     keys_ack(edges);
     return edges;
 }
 
-uint16_t read_switch(void)
-{
+uint16_t read_switch(void) {
+
     return (uint16_t)(AXI_LW_REG(REG_SWITCHS) & BITS_SWITCHS);
 }
 
-void set_leds(uint16_t leds)
-{
+void set_leds(uint16_t leds) {
+
     uint32_t cur = AXI_LW_REG(REG_LEDS);
     cur |= (uint32_t)(leds & BITS_LEDS);
     AXI_LW_REG(REG_LEDS) = cur;
 }
 
-void clear_leds(uint16_t leds)
-{
+void clear_leds(uint16_t leds) {
+
     uint32_t cur = AXI_LW_REG(REG_LEDS);
     cur &= ~(uint32_t)(leds & BITS_LEDS);
     AXI_LW_REG(REG_LEDS) = cur;
 }
 
-void seg7_write_int(uint32_t value)
-{
+void seg7_write_int(uint32_t value) {
+
     uint32_t hex = 0u;
     unsigned i;
 
@@ -174,12 +176,13 @@ void seg7_write_int(uint32_t value)
         hex |= (uint32_t)VAL2SEG[value % 10u] << (HEX_BITS_OFFSET * (int)i);
         value /= 10u;
     }
+
     seg7_write_3_0(hex);
     seg7_write_5_4(0u);
 }
 
-void seg7_clear(void)
-{
+void seg7_clear(void) {
+
     seg7_write_3_0(0u);
     seg7_write_5_4(0u);
 }

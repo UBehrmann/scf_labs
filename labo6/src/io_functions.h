@@ -38,9 +38,6 @@ int deinit_IO(void);
 uint32_t read_lw_bridge_switches(void);
 uint32_t read_lw_bridge_keys(void);
 
-/* Court test LED / HEX sur l'IP AXI (apres chargement du .rbf labo 5). */
-void hw_led_hex_selftest(void);
-
 uint32_t read_cst(void);
 void     write_test(uint32_t val);
 uint32_t read_test(void);
