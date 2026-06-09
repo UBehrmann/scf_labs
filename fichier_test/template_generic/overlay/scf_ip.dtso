@@ -1,0 +1,17 @@
+/dts-v1/;
+/plugin/;
+
+&fpga {
+	status = "okay";
+};
+
+&fpga_region0 {
+	status = "okay";
+	firmware-name = "DE1_SoC_top.rbf";
+
+	scf_ip: scf_ip@0 {
+		compatible = "scf_exam_ip";   /* TODO: match driver of_device_id */
+		reg = <0x00000000 0x1000>;
+		/* interrupts = <0 40 4>; */  /* TODO if IRQ exported */
+	};
+};

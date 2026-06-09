@@ -1,0 +1,20 @@
+/dts-v1/;
+/plugin/;
+
+/* TODO: adjust paths — see labo9 PDF and socfpga bindings */
+
+&fpga {
+	status = "okay";
+};
+
+&fpga_region0 {
+	status = "okay";
+	firmware-name = "DE1_SoC_top.rbf";
+
+	convol: convol@0 {
+		compatible = "de1_convol";
+		reg = <0x00000000 0x1000>;
+		interrupt-parent = <&hps_0>;
+		interrupts = <0 40 4>; /* TODO: match Qsys irq index */
+	};
+};

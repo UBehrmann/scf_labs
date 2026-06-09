@@ -1,0 +1,49 @@
+package require -exact qsys 16.1
+
+set_module_property NAME AXI4Lite_IP
+set_module_property VERSION 1.0
+set_module_property DISPLAY_NAME AXI4Lite_IP
+set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
+set_module_property EDITABLE true
+set_module_property OPAQUE_ADDRESS_MAP true
+
+add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
+set_fileset_property QUARTUS_SYNTH TOP_LEVEL axi4lite_slave
+add_fileset_file axi4lite_slave.vhd VHDL PATH axi4lite_slave.vhd TOP_LEVEL_FILE
+
+add_parameter AXI_DATA_WIDTH INTEGER 32
+set_parameter_property AXI_DATA_WIDTH HDL_PARAMETER true
+add_parameter AXI_ADDR_WIDTH INTEGER 12
+set_parameter_property AXI_ADDR_WIDTH HDL_PARAMETER true
+
+add_interface altera_axi4lite_slave axi4lite end
+set_interface_property altera_axi4lite_slave associatedClock clock_sink
+set_interface_property altera_axi4lite_slave associatedReset reset_sink
+
+add_interface_port altera_axi4lite_slave axi_awaddr_i awaddr Input axi_addr_width
+add_interface_port altera_axi4lite_slave axi_awprot_i awprot Input 3
+add_interface_port altera_axi4lite_slave axi_awvalid_i awvalid Input 1
+add_interface_port altera_axi4lite_slave axi_awready_o awready Output 1
+add_interface_port altera_axi4lite_slave axi_wdata_i wdata Input axi_data_width
+add_interface_port altera_axi4lite_slave axi_wstrb_i wstrb Input 4
+add_interface_port altera_axi4lite_slave axi_wvalid_i wvalid Input 1
+add_interface_port altera_axi4lite_slave axi_wready_o wready Output 1
+add_interface_port altera_axi4lite_slave axi_bresp_o bresp Output 2
+add_interface_port altera_axi4lite_slave axi_bvalid_o bvalid Output 1
+add_interface_port altera_axi4lite_slave axi_bready_i bready Input 1
+add_interface_port altera_axi4lite_slave axi_araddr_i araddr Input axi_addr_width
+add_interface_port altera_axi4lite_slave axi_arprot_i arprot Input 3
+add_interface_port altera_axi4lite_slave axi_arvalid_i arvalid Input 1
+add_interface_port altera_axi4lite_slave axi_arready_o arready Output 1
+add_interface_port altera_axi4lite_slave axi_rdata_o rdata Output axi_data_width
+add_interface_port altera_axi4lite_slave axi_rresp_o rresp Output 2
+add_interface_port altera_axi4lite_slave axi_rvalid_o rvalid Output 1
+add_interface_port altera_axi4lite_slave axi_rready_i rready Input 1
+
+add_interface clock_sink clock end
+add_interface_port clock_sink clk_i clk Input 1
+
+add_interface reset_sink reset end
+set_interface_property reset_sink associatedClock clock_sink
+set_interface_property reset_sink synchronousEdges DEASSERT
+add_interface_port reset_sink reset_i reset Input 1

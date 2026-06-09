@@ -1,0 +1,16 @@
+/dts-v1/;
+/plugin/;
+
+&fpga {
+	status = "okay";
+};
+
+&fpga_region0 {
+	status = "okay";
+	firmware-name = "DE1_SoC_top.rbf";
+
+	convol: convol@0 {
+		compatible = "de1_convol";
+		reg = <0x00000000 0x1000>;
+	};
+};
