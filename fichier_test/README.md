@@ -2,6 +2,8 @@
 
 Templates and step-by-step guides for the DE1-SoC continuous assessment (based on TE2 2024 + labo5/7/9).
 
+**Exam day → start here: [EXAM_QUICKSTART.md](EXAM_QUICKSTART.md)** (condensed checklist; links to full guides).
+
 ## Layout
 
 ```

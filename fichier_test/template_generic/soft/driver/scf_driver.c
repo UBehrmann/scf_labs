@@ -18,6 +18,11 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/uaccess.h>
+/* Optional IRQ + blocking read — uncomment when exam requires interrupt on output:
+ * #include <linux/sched.h>
+ * #include <linux/poll.h>
+ * #include <linux/wait.h>
+ */
 
 #include "../axi_regs.h"
 #include "../ioctl_cmds.h"
@@ -29,6 +34,10 @@ struct scf_priv {
 	struct mutex lock;
 	void __iomem *regs;
 	int irq;
+	/* Optional — uncomment with IRQ + blocking read/poll:
+	 * wait_queue_head_t waitq;
+	 * atomic_t out_ready;          // set in irq_handler, cleared in read()
+	 */
 };
 
 static struct scf_priv g_priv;
@@ -48,15 +57,29 @@ static u32 scf_status(struct scf_priv *p)
 	return scf_reg_read(p, REG_CTRL_STATUS);
 }
 
-/* TODO: IRQ handler if exam requires interrupt on output ready */
+/*
+ * --- Optional IRQ (2024 FIR: interrupt when output ready) ---
+ * Uncomment handler + request_irq block in scf_init() / scf_exit().
+ * FPGA: export irq from IP, pulse when DATA_OUT valid; optional REG_IRQ_CLEAR.
+ */
+#if 0
 static irqreturn_t scf_irq_handler(int irq, void *dev_id)
 {
 	struct scf_priv *p = dev_id;
+	u32 st = scf_status(p);
 
-	(void)p;
-	/* wake poll / kill_fasync / complete() */
+	if (!(st & ST_OUT_READY))
+		return IRQ_NONE;
+
+	/* Clear interrupt at source if HW has edge/level clear register:
+	 * scf_reg_write(p, REG_IRQ_CLEAR, 1);
+	 */
+
+	atomic_set(&p->out_ready, 1);
+	wake_up_interruptible(&p->waitq);
 	return IRQ_HANDLED;
 }
+#endif
 
 static int scf_open(struct inode *inode, struct file *filp)
 {
@@ -78,7 +101,17 @@ static ssize_t scf_read(struct file *filp, char __user *buf, size_t count, loff_
 	struct scf_priv *p = filp->private_data;
 	u32 val;
 
-	/* TODO: block until ST_OUT_READY, or return -EAGAIN */
+	/* Optional blocking read — wait for IRQ (uncomment with irq_handler above):
+	 * if (filp->f_flags & O_NONBLOCK) {
+	 *     if (!atomic_read(&p->out_ready))
+	 *         return -EAGAIN;
+	 * } else {
+	 *     ret = wait_event_interruptible(p->waitq, atomic_read(&p->out_ready));
+	 *     if (ret)
+	 *         return ret;
+	 * }
+	 * atomic_set(&p->out_ready, 0);
+	 */
 	if (count < AXI_IO_CHUNK)
 		return -EINVAL;
 
@@ -132,6 +165,19 @@ static long scf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	}
 }
 
+#if 0
+static __poll_t scf_poll(struct file *filp, poll_table *wait)
+{
+	struct scf_priv *p = filp->private_data;
+	__poll_t mask = 0;
+
+	poll_wait(filp, &p->waitq, wait);
+	if (atomic_read(&p->out_ready))
+		mask |= EPOLLIN | EPOLLRDNORM;
+	return mask;
+}
+#endif
+
 static const struct file_operations scf_fops = {
 	.owner          = THIS_MODULE,
 	.open           = scf_open,
@@ -139,6 +185,7 @@ static const struct file_operations scf_fops = {
 	.read           = scf_read,
 	.write          = scf_write,
 	.unlocked_ioctl = scf_ioctl,
+	/* .poll = scf_poll,   -- optional, with IRQ */
 };
 
 static struct miscdevice scf_misc = {
@@ -171,6 +218,8 @@ static int __init scf_init(void)
 	int ret;
 
 	mutex_init(&g_priv.lock);
+	/* init_waitqueue_head(&g_priv.waitq); */
+	/* atomic_set(&g_priv.out_ready, 0); */
 
 	/* TODO: replace with platform_driver probe + devm_ioremap_resource */
 	g_priv.regs = ioremap(AXI_HPS_FPGA_BASE, AXI_MAP_SIZE);
@@ -183,7 +232,34 @@ static int __init scf_init(void)
 		return ret;
 	}
 
-	/* TODO: g_priv.irq = ...; request_irq(...) */
+#if 0
+	/* --- Option A: fixed IRQ line (quick exam, no DT) ---
+	 * Must match Qsys irq export → hps_0.f2h_irq index.
+	 */
+	g_priv.irq = 40;
+	ret = request_irq(g_priv.irq, scf_irq_handler, IRQF_SHARED,
+			  DEV_NAME, &g_priv);
+	if (ret) {
+		pr_err(DRV_NAME ": request_irq %d failed (%d)\n", g_priv.irq, ret);
+		iounmap(g_priv.regs);
+		return ret;
+	}
+
+	/* --- Option B: platform driver + device tree (.dtso) ---
+	 * In probe(), after ioremap:
+	 *
+	 *   priv->irq = platform_get_irq(pdev, 0);
+	 *   if (priv->irq < 0)
+	 *       return priv->irq;
+	 *   ret = devm_request_irq(&pdev->dev, priv->irq, scf_irq_handler,
+	 *                          IRQF_SHARED, DEV_NAME, priv);
+	 *   if (ret)
+	 *       return ret;
+	 *
+	 * .dtso: interrupts = <0 IRQ_NUMBER 4>;  -- from Qsys / GIC mapping
+	 * See labo9/soft/driver/convol.c and guides/03_run_userspace.md
+	 */
+#endif
 
 	ret = misc_register(&scf_misc);
 	if (ret) {
@@ -197,8 +273,11 @@ static int __init scf_init(void)
 
 static void __exit scf_exit(void)
 {
+#if 0
 	if (g_priv.irq > 0)
 		free_irq(g_priv.irq, &g_priv);
+	/* devm_request_irq: no free_irq needed — removed with platform device */
+#endif
 	misc_deregister(&scf_misc);
 	if (g_priv.regs) {
 		iounmap(g_priv.regs);

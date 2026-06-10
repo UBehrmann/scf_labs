@@ -11,12 +11,14 @@
  */
 #include <linux/fs.h>
 #include <linux/init.h>
+#include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/uaccess.h>
+/* Optional IRQ — see template_generic/soft/driver/scf_driver.c (#if 0 blocks) */
 
 #include "../axi.h"
 #include "../common_constants.h"
@@ -27,9 +29,25 @@
 struct convol_priv {
 	struct mutex lock;
 	void __iomem *regs;
+	int irq;   /* optional — see scf_driver.c IRQ comments */
 };
 
 static struct convol_priv g_priv;
+
+#if 0
+/* Optional IRQ handler (2024 FIR / labo9) — full copy in scf_driver.c */
+static irqreturn_t convol_irq_handler(int irq, void *dev_id)
+{
+	struct convol_priv *p = dev_id;
+	u32 st = reg_read(p, REG_STATUS_CONTROL);
+
+	if (!(st & BITS_ST_OUT_ALM_FULL))   /* or ST_OUT_READY — match FPGA */
+		return IRQ_NONE;
+	atomic_set(&p->out_ready, 1);
+	wake_up_interruptible(&p->waitq);
+	return IRQ_HANDLED;
+}
+#endif
 
 static inline u32 reg_read(struct convol_priv *p, u32 idx)
 {
@@ -131,6 +149,11 @@ static int __init convol_init(void)
 		return -ENODEV;
 	}
 
+#if 0
+	/* platform_get_irq(pdev, 0) + devm_request_irq(..., convol_irq_handler, ...) */
+	/* or fixed: g_priv.irq = 40; request_irq(..., IRQF_SHARED, DEV_NAME, &g_priv); */
+#endif
+
 	ret = misc_register(&convol_misc);
 	if (ret) {
 		iounmap(g_priv.regs);
@@ -143,6 +166,10 @@ static int __init convol_init(void)
 
 static void __exit convol_exit(void)
 {
+#if 0
+	if (g_priv.irq > 0)
+		free_irq(g_priv.irq, &g_priv);
+#endif
 	misc_deregister(&convol_misc);
 	if (g_priv.regs) {
 		iounmap(g_priv.regs);
